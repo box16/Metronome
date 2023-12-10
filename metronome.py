@@ -15,16 +15,36 @@ HEAD_BEAT_FILE = "head_beat.wav"
 HEAD_BEAT_HZ = 880
 
 
+class BPM:
+    def __init__(self, bpm):
+        bpm = int(bpm)
+        if bpm <= 0:
+            raise ValueError("input error")
+        self._bpm = bpm
+
+    def get(self):
+        return self._bpm
+
+
+class BEATS:
+    def __init__(self, beats):
+        beats = int(beats)
+        if beats <= 0:
+            raise ValueError("input error")
+        self._beats = beats
+
+    def get(self):
+        return self._beats
+
+
 class Metronome:
     def __init__(self):
         mixer.init()
-        self.beat = mixer.Sound(self._beat_file_check(BEAT_HZ, BEAT_FILE))
-        self.head_beat = mixer.Sound(
-            self._beat_file_check(HEAD_BEAT_HZ, HEAD_BEAT_FILE)
-        )
+        self.beat = mixer.Sound(self._beat_file(BEAT_HZ, BEAT_FILE))
+        self.head_beat = mixer.Sound(self._beat_file(HEAD_BEAT_HZ, HEAD_BEAT_FILE))
         self.is_playing = False
 
-    def _beat_file_check(self, frequency, file_name):
+    def _beat_file(self, frequency, file_name):
         if getattr(sys, "frozen", False):
             application_path = sys._MEIPASS
         else:
@@ -37,15 +57,15 @@ class Metronome:
 
     def _start_metronome(self, bpm, beats):
         self.is_playing = True
-        beat_duration = ONE_MINUTE / bpm
+        beat_duration = ONE_MINUTE / bpm.get()
 
         while True:
             if not self.is_playing:
                 break
-            for beat in range(beats):
+            for _beat in range(beats.get()):
                 if not self.is_playing:
                     break
-                if beat == 0:
+                if _beat == 0:
                     self.head_beat.play()
                 else:
                     self.beat.play()
@@ -91,15 +111,12 @@ class MetronomeGUI:
         )
         self.stop_button.pack()
 
-        self.root.protocol("WM_DELETE_WINDOW", self.delete_window)
+        self.root.protocol("WM_DELETE_WINDOW", self._delete_window)
 
     def _start_metronome(self):
         try:
-            bpm = int(self.bpm_entry.get())
-            beats = int(self.beats_entry.get())
-            if (bpm <= 0) or (beats <= 0):
-                raise ValueError("input error")
-
+            bpm = BPM(self.bpm_entry.get())
+            beats = BEATS(self.beats_entry.get())
             self.metronome.start_metronome(bpm, beats)
         except Exception as e:
             messagebox.showwarning(f"{type(e).__name__}", f"{str(e)}")
@@ -110,7 +127,7 @@ class MetronomeGUI:
     def start(self):
         self.root.mainloop()
 
-    def delete_window(self):
+    def _delete_window(self):
         self._stop_metronome()
         self.root.destroy()
 
