@@ -1,0 +1,44 @@
+`PyInstaller` で `.exe` ファイルを作成する際に、外部のデータファイル（この場合は `beat_440.wav` と `beat_880.wav`）が必要な場合、これらのファイルを実行可能ファイルに含めるための特別な処理が必要です。`PyInstaller` はデフォルトではPythonのスクリプトファイルのみを処理し、外部のデータファイルは自動的には含めません。
+
+### 外部ファイルの追加
+
+外部ファイルを `.exe` ファイルに含めるためには、`PyInstaller` の `--add-data` オプションを使用します。このオプションを使うと、指定したデータファイルを実行可能ファイルに含めることができます。
+
+コマンドの書式は以下のようになります：
+
+```bash
+pyinstaller --onefile --noconsole --add-data "<path_to_data_file>:<dest_path>" your_script.py
+```
+
+ここで、`<path_to_data_file>` は追加するファイルのパス、`<dest_path>` は実行可能ファイル内でのファイルの保存先です。
+
+### 例
+
+```bash
+pyinstaller --onefile --noconsole --add-data "beat_440.wav;." --add-data "beat_880.wav;." metronome.py
+```
+
+このコマンドは、`beat_440.wav` と `beat_880.wav` を実行可能ファイルに含め、それらを実行時のカレントディレクトリ（`.` で指定）に配置します。
+
+### スクリプト内でのファイルパスの処理
+
+`PyInstaller` でパッケージ化した後、実行時にこれらのファイルへのパスが変わるため、スクリプト内でファイルパスを正しく処理する必要があります。`sys._MEIPASS` を使用して、実行可能ファイルと同じディレクトリにあるリソースにアクセスします。
+
+```python
+import sys
+import os
+
+if getattr(sys, 'frozen', False):
+    # 実行可能ファイルの場合
+    application_path = sys._MEIPASS
+else:
+    application_path = os.path.dirname(os.path.abspath(__file__))
+
+# リソースへのフルパスを作成
+beat_440_path = os.path.join(application_path, "beat_440.wav")
+beat_880_path = os.path.join(application_path, "beat_880.wav")
+```
+
+そして、`beat_440_path` と `beat_880_path` を使ってファイルを読み込みます。
+
+これにより、外部ファイルを含むPythonスクリプトを `.exe` ファイルに変換し、正しく実行することができます。
